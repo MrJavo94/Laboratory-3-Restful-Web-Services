@@ -193,11 +193,27 @@ public class AddressBookServiceTest {
 		assertEquals(2, addressBookRetrieved.getPersonList().size());
 		assertEquals(juan.getName(), addressBookRetrieved.getPersonList()
 				.get(1).getName());
+		int tam1 = addressBookRetrieved.getNextId();
 
-		//////////////////////////////////////////////////////////////////////
-		// Verify that POST is well implemented by the service, i.e
-		// test that it is not safe and not idempotent
-		//////////////////////////////////////////////////////////////////////	
+		// Check that POST is unsafe
+		Person javier = new Person();
+		javier.setName("javier");
+		response = client.target("http://localhost:8282/contacts")
+				.request(MediaType.APPLICATION_JSON)
+				.post(Entity.entity(javier, MediaType.APPLICATION_JSON));		
+		response = client.target("http://localhost:8282/contacts")
+				.request(MediaType.APPLICATION_JSON).get();
+		int tam2 = response.readEntity(AddressBook.class).getNextId();
+		assertNotEquals(tam1, tam2);
+		
+		// Check that POST is not idempotent
+		response = client.target("http://localhost:8282/contacts")
+				.request(MediaType.APPLICATION_JSON)
+				.post(Entity.entity(javier, MediaType.APPLICATION_JSON));		
+		response = client.target("http://localhost:8282/contacts")
+				.request(MediaType.APPLICATION_JSON).get();
+		int tam3 = response.readEntity(AddressBook.class).getNextId();
+		assertNotEquals(tam2, tam3);
 		
 	}
 
